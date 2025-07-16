@@ -1,0 +1,16 @@
+[Unit]
+Description=Resource jail for building code
+After=network.target
+
+[Service]
+WorkingDirectory=/home/ec2-user/perf-ninja/tools
+ExecStart=/usr/bin/bash /home/ec2-user/perf-ninja/tools/make_benchmark_library.sh
+Restart=no
+MemoryMax=1600M
+CPUQuota=90%
+
+
+[Install]
+WantedBy=multi-user.target
+
+
