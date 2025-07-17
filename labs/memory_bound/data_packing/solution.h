@@ -5,13 +5,13 @@ constexpr int N = 1000000;
 constexpr int minRandom = 0;
 constexpr int maxRandom = 100;
 
-// FIXME: this data structure can be reduced in size
 struct S {
-  int i;
-  long long l;
-  short s;
-  double d;
-  bool b;
+  long long l; // 8 bytes, wb
+  double d;    // 8 bytes, wb
+  int i;       // 4 bytes
+  short s;     // 2 bytes
+  bool b;      // 1 byte
+               // 1 byte implicit padding, wb
 
   bool operator<(const S &s) const { return this->i < s.i; }
 };
