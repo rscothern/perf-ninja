@@ -1,0 +1,6 @@
+cmake -E make_directory build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-gdwarf-4" -DCMAKE_CXX_FLAGS="-gdwarf-4" ..
+cmake --build . --config Debug --parallel 4
+cmake --build . --target validateLab
+cmake --build . --target benchmarkLab
