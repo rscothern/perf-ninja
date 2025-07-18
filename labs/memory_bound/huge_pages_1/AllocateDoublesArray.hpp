@@ -1,6 +1,6 @@
 #include <iostream>
 #include <memory>
-
+#include <cstring>
 #if defined(__linux__) || defined(__linux) || defined(linux) ||                \
     defined(__gnu_linux__)
 #define ON_LINUX
@@ -37,6 +37,7 @@
 #include <Sddl.h>
 #include <ntsecapi.h>
 #include <ntstatus.h>
+
 
 // Based on
 // https://stackoverflow.com/questions/42354504/enable-large-pages-in-windows-programmatically
@@ -149,19 +150,40 @@ inline bool setRequiredPrivileges() {
 
 #endif
 
+struct mem_unmapper {
+  size_t length{};
+
+  void operator()(void* addr) const noexcept {
+    munmap(addr, length);
+  }
+};
+
 // Allocate an array of doubles of size `size`, return it as a
 // std::unique_ptr<double[], D>, where `D` is a custom deleter type
 inline auto allocateDoublesArray(size_t size) {
-  // Allocate memory
-  double *alloc = new double[size];
-  // remember to cast the pointer to double* if your allocator returns void*
+  int mem_size = size * sizeof(double);
+  std::cout << "Allocate request for " << mem_size << " bytes, "
+    << mem_size / (1 << 20) << " MB" << std::endl;
+
+  // Allocate memory from an explicitly allocated huge page
+  double* ptr = (double*)mmap(
+                  nullptr, // no fixed address
+                  mem_size,
+                  PROT_READ | PROT_WRITE,
+                  MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB,
+                  -1,
+                  0);
+  if (ptr == MAP_FAILED) {
+    int what = errno;
+    std::cout << "Failed mmap, err=" << strerror(what) << std::endl;
+    throw std::bad_alloc{};
+  }
 
   // Deleters can be conveniently defined as lambdas, but you can explicitly
   // define a class if you're not comfortable with the syntax
-  auto deleter = [/* state = ... */](double *ptr) { delete[] ptr; };
+  auto deleter = mem_unmapper{mem_size};
 
-  return std::unique_ptr<double[], decltype(deleter)>(alloc,
-                                                      std::move(deleter));
+  return std::unique_ptr<double[], decltype(deleter)>(ptr, std::move(deleter));
 
   // The above is equivalent to:
   // return std::make_unique<double[]>(size);
