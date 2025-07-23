@@ -2,6 +2,8 @@
 #include <array>
 #include <iostream>
 
+const int STEP = 6;
+
 unsigned getSumOfDigits(unsigned n) {
   unsigned sum = 0;
   while (n != 0) {
@@ -22,20 +24,30 @@ unsigned getSumOfDigits(unsigned n) {
 //       Think how you can execute multiple dependency chains in parallel.
 unsigned solution(List *l1, List *l2) {
   unsigned retVal = 0;
-
   List *head2 = l2;
   // O(N^2) algorithm:
+
   while (l1) {
-    unsigned v = l1->value;
+    int curr = 0;
+    // Gather STEP elements
+    std::array<unsigned int, STEP> working_set;
+    while (curr < STEP && l1) {
+      unsigned v = l1->value;
+      working_set[curr] = v;
+      curr += 1;
+      l1 = l1->next;
+    }
+
     l2 = head2;
     while (l2) {
-      if (l2->value == v) {
-        retVal += getSumOfDigits(v);
-        break;
+      for (auto v : working_set) {
+        if (l2->value == v) {
+          retVal += getSumOfDigits(v);
+          break;
+        }
       }
       l2 = l2->next;
     }
-    l1 = l1->next;
   }
 
   return retVal;
